@@ -1,4 +1,4 @@
-name: Semgrep
+name: Semgrep (Local Scan Only)
 
 on:
   workflow_dispatch: {}
@@ -7,19 +7,27 @@ on:
     branches:
       - main
       - master
-    paths:
-      - .github/workflows/semgrep.yml
-  schedule:
-    - cron: '12 15 * * *'
 
 jobs:
   semgrep:
-    name: semgrep/ci
+    name: Semgrep Local SAST
     runs-on: ubuntu-latest
-    container:
-      image: semgrep/semgrep
-    if: github.actor != 'dependabot[bot]'
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install Semgrep
+        run: |
+          pip install semgrep
+
       - name: Run Semgrep scan
-        run: semgrep scan --config auto --json > semgrep-results.json
+        run: |
+          semgrep scan --config auto --json > semgrep-results.json
+          cat semgrep-results.json
+
+      - name: Upload Semgrep results
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-report
+          path: semgrep-results.json
